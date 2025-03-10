@@ -6,12 +6,13 @@ from pydantic import BaseModel, field_validator
 from autogen_core import AgentId, MessageContext, RoutedAgent, message_handler, SingleThreadedAgentRuntime
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from autogen_core.models import (
-    SystemMessage
-)   
+from autogen_core.models import AssistantMessage, ChatCompletionClient, SystemMessage, UserMessage
+
+from autogen_core.model_context import BufferedChatCompletionContext
 
 import os
 from dotenv import load_dotenv
+from main import model_client
 
 load_dotenv()
 API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -20,7 +21,7 @@ API_KEY = os.environ.get("OPENAI_API_KEY")
 class MyMessageType:
     content: str
 
-# Pydantic model with structured output using Pydantic V2 style validators.
+
 class DomainClassifierOutput(BaseModel):
     agent_name: str
 
@@ -43,19 +44,17 @@ class DomainClassifierOutput(BaseModel):
             raise ValueError(f"Invalid agent name: {value}")
         return value
 
-# ----- Domain Classifier Agent using LLM reasoning with structured output -----
+
 class DomainClassifierAgent(RoutedAgent):
     def __init__(self, runtime) -> None:
-        super().__init__("DomainClassifierAgent")
-        # Use a different attribute name to avoid conflict with any runtime property.
+        super().__init__("DomainClassifierAgent")        
         self._runtime = runtime
         self.model_client = OpenAIChatCompletionClient(model="gpt-4o-mini", api_key=API_KEY)
 
     @message_handler
     async def handle_query(self, message: MyMessageType, ctx: MessageContext) -> None:
-        print(f"[{self.id.type}] Received query: {message.content}")
+        print(f"[{self.id.type}] Received query: {message.content}")        
         
-        # Build a prompt instructing the LLM to output structured JSON.
         prompt = (
             "You are an expert banking domain classifier. Your task is to determine which "
             "banking domain is most relevant for the following query. The available domains "
@@ -71,11 +70,10 @@ class DomainClassifierAgent(RoutedAgent):
             "9. Capital & Treasury Operations Agent: CapitalTreasuryAgent\n"
             "10. Analytics & Business Intelligence Agent: AnalyticsAgent\n\n"
             f"User Query: \"{message.content}\"\n\n"
-            "Respond with a valid JSON object that contains exactly one key 'agent_name' whose "
+            "Respond with a valid JSON object that contains exactly one key 'agent_name' whose"
             "value is one of the agent names listed above. For example: {\"agent_name\": \"RetailBankingAgent\"}"
-        )
+        )        
         
-        # Call the LLM.
         response = await self.model_client.create(
             messages=[
             SystemMessage(content=prompt)
@@ -84,9 +82,8 @@ class DomainClassifierAgent(RoutedAgent):
         llm_output = response.content.strip()
         print(f"[{self.id.type}] Raw LLM response: {llm_output}")
 
-        # Parse the JSON response using the Pydantic model.
+        
         try:
-            # Sometimes the LLM may include extra text; we attempt to extract the JSON portion.
             json_start = llm_output.find("{")
             json_end = llm_output.rfind("}") + 1
             json_str = llm_output[json_start:json_end]
@@ -101,20 +98,25 @@ class DomainClassifierAgent(RoutedAgent):
         print(f"[{self.id.type}] Forwarding query to {target.type}")
         await self._runtime.send_message(message, target)
 
-# ----- Domain-specific Agents -----
-class RetailBankingAgent(RoutedAgent):
-    def __init__(self) -> None:
-        super().__init__("RetailBankingAgent")
 
+class RetailBankingAgent(RoutedAgent):
+    def __init__(self, model_client: ChatCompletionClient) -> None:
+        super().__init__("A Retail Banking Agent")
+        self._system_messages = [SystemMessage(content="You are a Retail Banking expert. Process the customer's query regarding retail banking services such as account details, transactions, or branch services and provide an appropriate response")]
+        self._model_client = model_client
+        self._model_context = BufferedChatCompletionContext(buffer_size=5)
+        
     @message_handler
-    async def handle_query(self, message: MyMessageType, ctx: MessageContext) -> None:
+    async def handle_query(self, message: MyMessageType, ctx: MessageContext) -> MyMessageType:
         print(f"[{self.id.type}] Processing query: {message.content}")
-        prompt = ('''
-                You are a Retail Banking expert. Process the customer's query regarding retail banking services such as account details, transactions, or branch services and provide an appropriate response.
-                ''')
-        response = await.self.model
-        response = "Retail Banking Response: Your retail account details have been retrieved."
+        user_message = UserMessage(content=message.content, source="User")
+        await self._model_context.add_message(user_message)
+        
+        response = await self._model_client.create(self._system_messages + (await self._model_context.get_messages()), cancellation_token=ctx.cancellation_token,)
+        assert isinstance(response.content, str)
         print(f"[{self.id.type}] Response: {response}")
+        await self._model_context.add_message(AssistantMessage(content=response.content, source=self.metadata["type"]))
+        return MyMessageType(content=response.content)
 
 class CorporateBusinessBankingAgent(RoutedAgent):
     def __init__(self) -> None:
@@ -206,13 +208,10 @@ class AnalyticsAgent(RoutedAgent):
         response = "Analytics & Business Intelligence Response: Your analytics inquiry has been resolved."
         print(f"[{self.id.type}] Response: {response}")
 
-# ----- Main function to register and test agents -----
 async def main():
     runtime = SingleThreadedAgentRuntime()
-
-    # Register the domain classifier and all domain-specific agents.
     await DomainClassifierAgent.register(runtime, "DomainClassifierAgent", lambda: DomainClassifierAgent(runtime))
-    await RetailBankingAgent.register(runtime, "RetailBankingAgent", lambda: RetailBankingAgent())
+    await RetailBankingAgent.register(runtime,"RetailBankingAgent", lambda: RetailBankingAgent(OpenAIChatCompletionClient(model="gpt-4o-mini")))
     await CorporateBusinessBankingAgent.register(runtime, "CorporateBusinessBankingAgent", lambda: CorporateBusinessBankingAgent())
     await InvestmentBankingAgent.register(runtime, "InvestmentBankingAgent", lambda: InvestmentBankingAgent())
     await WealthManagementAgent.register(runtime, "WealthManagementAgent", lambda: WealthManagementAgent())
@@ -223,11 +222,11 @@ async def main():
     await CapitalTreasuryAgent.register(runtime, "CapitalTreasuryAgent", lambda: CapitalTreasuryAgent())
     await AnalyticsAgent.register(runtime, "AnalyticsAgent", lambda: AnalyticsAgent())
 
-    runtime.start()  # Start processing messages in the background.
+    runtime.start()  
 
-    # Send a sample banking query to the domain classifier agent.
+    
     classifier_id = AgentId("DomainClassifierAgent", "default")
-    sample_query = MyMessageType(content="I need advice on my investment portfolio and risk management strategies.")
+    sample_query = MyMessageType(content="How can I avail loan from bank?")
     await runtime.send_message(sample_query, classifier_id)
 
     await runtime.stop_when_idle()

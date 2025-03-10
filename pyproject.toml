@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "autogen-multiagent"
+version = "0.1.0"
+description = ""
+authors = ["Akshath <tiwari.akshat123@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+autogen-core = "^0.4.8.1"
+python-dotenv = "^1.0.1"
+groq = "^0.18.0"
+autogen-agentchat = "^0.4.8.1"
+autogen-ext = {extras = ["openai"], version = "^0.4.8.1"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
