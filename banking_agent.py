@@ -101,7 +101,7 @@ class DomainClassifierAgent(RoutedAgent):
 
 class RetailBankingAgent(RoutedAgent):
     def __init__(self, model_client: ChatCompletionClient) -> None:
-        super().__init__("A Retail Banking Agent")
+        super().__init__("RetailBankingAgent")
         self._system_messages = [SystemMessage(content="You are a Retail Banking expert. Process the customer's query regarding retail banking services such as account details, transactions, or branch services and provide an appropriate response")]
         self._model_client = model_client
         self._model_context = BufferedChatCompletionContext(buffer_size=5)
@@ -110,6 +110,7 @@ class RetailBankingAgent(RoutedAgent):
     async def handle_query(self, message: MyMessageType, ctx: MessageContext) -> MyMessageType:
         print(f"[{self.id.type}] Processing query: {message.content}")
         user_message = UserMessage(content=message.content, source="User")
+        ## TODO: Retrieve vector embedding data against the user message and provide the context to LLM
         await self._model_context.add_message(user_message)
         
         response = await self._model_client.create(self._system_messages + (await self._model_context.get_messages()), cancellation_token=ctx.cancellation_token,)
