@@ -122,12 +122,21 @@ class RetailBankingAgent(RoutedAgent):
 class CorporateBusinessBankingAgent(RoutedAgent):
     def __init__(self) -> None:
         super().__init__("CorporateBusinessBankingAgent")
-
+        self._system_messages = [SystemMessage(content="You are an expert in Corporate & Business Banking. Handle queries related to business accounts, loans, and corporate financial services while providing clear and concise advice.")]
+        self._model_client = model_client
+        self._model_context = BufferedChatCompletionContext(buffer_size=5)
+        
     @message_handler
-    async def handle_query(self, message: MyMessageType, ctx: MessageContext) -> None:
+    async def handle_query(self, message: MyMessageType, ctx: MessageContext) -> MyMessageType:
         print(f"[{self.id.type}] Processing query: {message.content}")
-        response = "Corporate & Business Banking Response: Your business inquiry has been addressed."
+        user_message = UserMessage(content=message.content, source="User")        
+        await self._model_context.add_message(user_message)
+        
+        response = await self._model_client.create(self._system_messages + (await self._model_context.get_messages()), cancellation_token=ctx.cancellation_token,)
+        assert isinstance(response.content, str)
         print(f"[{self.id.type}] Response: {response}")
+        await self._model_context.add_message(AssistantMessage(content=response.content, source=self.metadata["type"]))
+        return MyMessageType(content=response.content)
 
 class InvestmentBankingAgent(RoutedAgent):
     def __init__(self) -> None:
@@ -213,7 +222,7 @@ async def main():
     runtime = SingleThreadedAgentRuntime()
     await DomainClassifierAgent.register(runtime, "DomainClassifierAgent", lambda: DomainClassifierAgent(runtime))
     await RetailBankingAgent.register(runtime,"RetailBankingAgent", lambda: RetailBankingAgent(OpenAIChatCompletionClient(model="gpt-4o-mini")))
-    await CorporateBusinessBankingAgent.register(runtime, "CorporateBusinessBankingAgent", lambda: CorporateBusinessBankingAgent())
+    await CorporateBusinessBankingAgent.register(runtime, "CorporateBusinessBankingAgent", lambda: (OpenAIChatCompletionClient(model="gpt-4o-mini")))
     await InvestmentBankingAgent.register(runtime, "InvestmentBankingAgent", lambda: InvestmentBankingAgent())
     await WealthManagementAgent.register(runtime, "WealthManagementAgent", lambda: WealthManagementAgent())
     await RiskManagementAgent.register(runtime, "RiskManagementAgent", lambda: RiskManagementAgent())

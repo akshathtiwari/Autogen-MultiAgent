@@ -238,26 +238,19 @@ def escalate_to_human() -> str:
     return human_agent_topic_type
 
 
-transfer_to_sales_agent_tool = FunctionTool(
-    transfer_to_sales_agent, description="Use for anything sales or buying related."
-)
-transfer_to_issues_and_repairs_tool = FunctionTool(
-    transfer_to_issues_and_repairs, description="Use for issues, repairs, or refunds."
-)
-transfer_back_to_triage_tool = FunctionTool(
-    transfer_back_to_triage,
-    description="Call this if the user brings up a topic outside of your purview,\nincluding escalating to human.",
-)
-escalate_to_human_tool = FunctionTool(escalate_to_human, description="Only call this if explicitly asked to.")
-
-runtime = SingleThreadedAgentRuntime()
-
-model_client = OpenAIChatCompletionClient(
-    model="gpt-4o-mini",
-    # api_key="YOUR_API_KEY",
-)
 async def main():
-    # Register the triage agent.
+    
+    transfer_to_sales_agent_tool = FunctionTool(transfer_to_sales_agent, description="Use for anything sales or buying related.")
+    transfer_to_issues_and_repairs_tool = FunctionTool(transfer_to_issues_and_repairs, description="Use for issues, repairs, or refunds.")
+    transfer_back_to_triage_tool = FunctionTool(transfer_back_to_triage, description="Call this if the user brings up a topic outside of your purview,\nincluding escalating to human.",)
+    escalate_to_human_tool = FunctionTool(escalate_to_human, description="Only call this if explicitly asked to.")
+
+    runtime = SingleThreadedAgentRuntime()
+
+    model_client = OpenAIChatCompletionClient(
+        model="gpt-4o-mini",
+    )
+    
     triage_agent_type = await AIAgent.register(
         runtime,
         type=triage_agent_topic_type,  # Using the topic type as the agent type.
