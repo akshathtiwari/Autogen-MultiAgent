@@ -1,11 +1,7 @@
-# app/tools/delegate_tools.py
+
 
 from autogen_core.tools import FunctionTool
 
-#
-# Each "transfer_to_*" function returns a string
-# that identifies the topic type of the target domain agent.
-#
 
 def transfer_to_retail_banking() -> str:
     return "RetailBanking"
@@ -37,7 +33,6 @@ def transfer_to_capital_treasury() -> str:
 def transfer_to_analytics() -> str:
     return "Analytics"
 
-# Wrap them as Tools so an AI agent can "call" them
 transfer_to_retail_banking_tool = FunctionTool(
     transfer_to_retail_banking,
     description="Call this to route the user to RetailBankingAgent."
@@ -79,7 +74,7 @@ transfer_to_analytics_tool = FunctionTool(
     description="Call this to route the user to AnalyticsAgent."
 )
 
-# app/tools/payment_tools.py
+
 
 from autogen_core.tools import FunctionTool
 from app.tools.transaction_tools import lookup_transaction, fix_core_banking_status

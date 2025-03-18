@@ -1,4 +1,4 @@
-# app/agents/user_agent.py
+
 
 from autogen_core import RoutedAgent, message_handler, MessageContext, TopicId
 from app.messages.message_types import UserLogin, UserTask, AgentResponse
@@ -32,7 +32,7 @@ class UserAgent(RoutedAgent):
 
     @message_handler
     async def handle_agent_response(self, message: AgentResponse, ctx: MessageContext) -> None:
-        # Print the last assistant message from the agent
+        
         last_assistant_msg = ""
         for m in reversed(message.context):
             if hasattr(m, "content") and m.content and isinstance(m.content, str):
@@ -45,7 +45,7 @@ class UserAgent(RoutedAgent):
             print(f"\nEnding session {self.id.key}. Thank you!")
             return
 
-        # Add user input to the conversation and re-send to the same topic
+        
         message.context.append(UserMessage(content=user_input, source="User"))
         await self.publish_message(
             UserTask(context=message.context),

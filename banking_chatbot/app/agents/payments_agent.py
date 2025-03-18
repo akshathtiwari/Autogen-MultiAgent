@@ -1,4 +1,4 @@
-# app/agents/payments_agent.py
+
 
 import json
 from autogen_core import message_handler, MessageContext
@@ -11,9 +11,7 @@ from autogen_core.models import (
 from app.messages.message_types import UserTask, AgentResponse
 from app.agents.base_agent import BankingAIAgent
 
-#
-# Import the function tools from transaction_tools
-#
+
 from app.tools.transaction_tools import lookup_transaction_tool, fix_core_banking_status_tool
 
 class PaymentsAgent(BankingAIAgent):
@@ -39,38 +37,38 @@ class PaymentsAgent(BankingAIAgent):
     async def handle_task(self, message: UserTask, ctx: MessageContext) -> None:
         print(f"[Payments] Handling user task with {len(message.context)} messages.")
 
-        # 1) Let the LLM produce an initial response
+       
         llm_result = await self._model_client.create(
             messages=[self._system_message] + message.context,
-            # Provide the relevant tools to the LLM so it can produce function calls if desired
+            
             tools=[lookup_transaction_tool.schema, fix_core_banking_status_tool.schema],
             cancellation_token=ctx.cancellation_token,
         )
         print(f"\n*** Payments LLM response ***\n{llm_result.content}")
 
-        # 2) Prompt the user for transaction ID
+        
         transaction_id = input("\nEnter transaction ID: ")
 
-        # 3) Append user input to context
+        
         message.context.append(UserMessage(content=f"TransactionID: {transaction_id}", source="User"))
 
-        # 4) Use the lookup_transaction_tool
+        
         lookup_result_python = await lookup_transaction_tool.run_json(
             {"transaction_id": transaction_id},
             ctx.cancellation_token
         )
-        # Manually convert the Python dict to JSON
+        
         lookup_result_str = json.dumps(lookup_result_python, ensure_ascii=False)
         print(f"[Payments] Lookup result: {lookup_result_str}")
 
-        # 5) Parse the JSON string
+        
         try:
             tx_info = json.loads(lookup_result_str)
         except Exception as e:
             tx_info = {}
             print(f"Error parsing lookup result: {e}")
 
-        # 6) Check mismatch condition
+        
         if (
             tx_info.get("PaymentStatus") == "Success"
             and tx_info.get("CoreBankingStatus") != "Success"
@@ -90,7 +88,7 @@ class PaymentsAgent(BankingAIAgent):
         else:
             response_text = f"No discrepancy detected for transaction {transaction_id}."
 
-        # 7) Publish final AgentResponse
+        
         message.context.append(AssistantMessage(content=response_text, source=self.id.type))
         await self.publish_message(
             AgentResponse(context=message.context, reply_to_topic_type=self._my_topic_type),

@@ -1,12 +1,9 @@
-# app/tools/transaction_tools.py
+
 
 import csv
 import os
 from autogen_core.tools import FunctionTool
 
-#
-# Absolute path to your CSV file
-#
 CSV_PATH = "C:/Users/akstiwari/OneDrive - Deloitte (O365D)/Desktop/Laptop Files/Desktop Backup/learning/Autogen-MultiAgent/payment_gateway/transactions.csv"
 
 
@@ -66,7 +63,7 @@ def fix_core_banking_status(transaction_id: str, csv_path: str = CSV_PATH) -> di
             )
         }
 
-    # Rewrite CSV with updated row
+    
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -77,12 +74,6 @@ def fix_core_banking_status(transaction_id: str, csv_path: str = CSV_PATH) -> di
         "message": f"Updated transaction {transaction_id} so CoreBankingStatus=Success."
     }
 
-
-#
-# -------------- Minimal FunctionTools (without return_value_as_string) --------------
-#
-# You can import these in your PaymentsAgent. We'll do manual JSON dumping in the agent code.
-#
 
 lookup_transaction_tool = FunctionTool(
     lookup_transaction,

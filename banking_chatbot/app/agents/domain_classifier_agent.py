@@ -1,4 +1,3 @@
-# app/agents/domain_classifier_agent.py
 
 import json
 from autogen_core import RoutedAgent, message_handler, MessageContext, FunctionCall, TopicId
@@ -13,7 +12,7 @@ from autogen_core.models import (
 from autogen_core.tools import Tool
 
 from app.messages.message_types import UserTask, AgentResponse, DomainClassifierOutput
-from app.messages.message_types import MyMessageType  # if needed
+from app.messages.message_types import MyMessageType  
 
 
 class DomainClassifierAgent(RoutedAgent):
@@ -40,13 +39,13 @@ class DomainClassifierAgent(RoutedAgent):
 
     @message_handler
     async def handle_task(self, message: UserTask, ctx: MessageContext) -> None:
-        # 1) Gather user message(s)
+        
         user_content = ""
         for m in message.context:
             if isinstance(m, UserMessage):
                 user_content += m.content + "\n"
 
-        # 2) Build classification prompt
+        
         classification_prompt = (
             "You are an expert banking domain classifier. Your task is to decide which domain is relevant.\n"
             "Possible agent names: RetailBankingAgent, CorporateBusinessBankingAgent, InvestmentBankingAgent,\n"
@@ -61,13 +60,13 @@ class DomainClassifierAgent(RoutedAgent):
                 self._system_message,
                 UserMessage(content=classification_prompt, source="System"),
             ],
-            # tools=self._delegate_tool_schema,  # can call the delegate tools
+            
             cancellation_token=ctx.cancellation_token,
         )
 
         print(f"\n*** DomainClassifierAgent LLM response ***\n{llm_result.content}", flush=True)
 
-        # 3) Parse JSON or fallback
+        
         agent_name = "RetailBankingAgent"
         try:
             content = llm_result.content.strip()
@@ -81,7 +80,7 @@ class DomainClassifierAgent(RoutedAgent):
 
         print(f"Classified domain as: {agent_name}")
 
-        # 4) Decide which delegate tool to call
+        
         agent_to_tool = {
             "RetailBankingAgent": "transfer_to_retail_banking",
             "CorporateBusinessBankingAgent": "transfer_to_corporate_banking",
@@ -105,7 +104,7 @@ class DomainClassifierAgent(RoutedAgent):
 
         print(f"Forwarding user task to topic: {target_topic}", flush=True)
 
-        # 5) Append a function call + function result message to the user context, then publish
+        
         new_context = list(message.context)
         new_context.append(
             AssistantMessage(
@@ -126,9 +125,9 @@ class DomainClassifierAgent(RoutedAgent):
             )
         )
 
-        # Create a new TopicId with the target topic and the same source as in ctx.topic_id
+        
         new_topic = TopicId(target_topic, source=ctx.topic_id.source)
         await self.publish_message(
             UserTask(context=new_context),
-            topic_id=new_topic,  # new topic id with updated type
+            topic_id=new_topic, 
         )

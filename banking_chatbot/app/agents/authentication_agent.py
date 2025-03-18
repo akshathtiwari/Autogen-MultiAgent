@@ -1,4 +1,4 @@
-# app/agents/authentication_agent.py
+
 
 from autogen_core import RoutedAgent, message_handler, MessageContext, TopicId
 from app.messages.message_types import UserCredentials, UserLogin
@@ -22,11 +22,11 @@ class AuthenticationAgent(RoutedAgent):
 
         if username in self.valid_users and self.valid_users[username] == password:
             print(f"[{self.id.type}] User '{username}' authenticated successfully.")
-            # Publish a UserLogin message with the username as the session identifier.
+            
             await self.publish_message(
                 UserLogin(username=username),
                 topic_id=TopicId(self.user_topic, source=username)
             )
         else:
             print(f"[{self.id.type}] Authentication failed for user '{username}'.")
-            # Optionally, publish an error message or prompt for re-entry.
+            

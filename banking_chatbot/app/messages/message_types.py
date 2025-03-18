@@ -1,11 +1,11 @@
-# app/messages/message_types.py
+
 
 from typing import List
 from dataclasses import dataclass
 from pydantic import BaseModel, field_validator
 from autogen_core.models import LLMMessage
 
-# Existing types
+
 class UserLogin(BaseModel):
     """
     Fired when a new user session begins.
@@ -28,7 +28,7 @@ class AgentResponse(BaseModel):
     reply_to_topic_type: str
     context: List[LLMMessage]
 
-# New type for user credentials
+
 class UserCredentials(BaseModel):
     username: str
     password: str

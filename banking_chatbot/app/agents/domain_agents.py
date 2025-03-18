@@ -1,24 +1,14 @@
-# app/agents/domain_agents.py
+
 
 from autogen_core import TypeSubscription
 from autogen_core.models import SystemMessage, ChatCompletionClient
 from app.agents.base_agent import BankingAIAgent
 
-#
-# Each function registers a BankingAIAgent under a specific topic
-# ("RetailBanking", "CorporateBanking", etc.).
-#
-# The agent_type string is a descriptive name (like "RetailBankingAgent"),
-# while the topic_type is how the runtime routes messages (like "RetailBanking").
-# 
-# The system_prompt is a short instruction telling this agent what domain
-# expertise it has. In a real application, you'd expand the prompt accordingly.
-#
 
 async def register_retail_banking_agent(runtime, model_client: ChatCompletionClient):
     agent_type = await BankingAIAgent.register(
         runtime,
-        type="RetailBanking",  # topic type
+        type="RetailBanking",  
         factory=lambda: BankingAIAgent(
             agent_type="RetailBankingAgent",
             system_message=SystemMessage(
