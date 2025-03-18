@@ -160,28 +160,41 @@ async def register_it_ops_agent(runtime, model_client: ChatCompletionClient):
     await runtime.add_subscription(
         TypeSubscription(topic_type="ITOps", agent_type=agent_type.type)
     )
-
+    
+from app.agents.payments_agent import PaymentsAgent
 
 async def register_payments_agent(runtime, model_client: ChatCompletionClient):
-    agent_type = await BankingAIAgent.register(
+    agent_type = await PaymentsAgent.register(
         runtime,
         type="Payments",
-        factory=lambda: BankingAIAgent(
-            agent_type="PaymentsAgent",
+        factory=lambda: PaymentsAgent(
             system_message=SystemMessage(
-                content="You are a Payments & Settlement Systems expert. Handle money transfer, gateway, or settlement queries."
+                content="""
+You are a Payments & Settlement Systems expert.
+
+When the user reports a payment discrepancy, such as:
+- "payment mismatch"
+- "payment not reflecting in core banking"
+- "gateway success but not in the bank system"
+Then:
+1. Ask the user for transaction ID if you don't have it.
+2. Use the 'lookup_transaction' tool to retrieve PaymentStatus and CoreBankingStatus.
+3. If PaymentStatus=Success AND CoreBankingStatus != Success,
+   confirm with the user if they'd like to fix the mismatch.
+4. If user confirms, call 'fix_core_banking_status' for that transaction ID,
+   and let them know the mismatch is fixed.
+
+Remember:
+- Always confirm you have the TransactionID before you attempt a fix.
+- Only fix if PaymentStatus=Success and CoreBankingStatus != Success.
+- If the user uses words like "mismatch", "not reflecting", or "discrepancy", you should address it.
+- If a transaction isn't found or doesn't match these conditions, let the user know.
+"""
             ),
             model_client=model_client,
-            tools=[],
-            delegate_tools=[],
-            my_topic_type="Payments",
-            user_topic_type="User",
         )
     )
-    await runtime.add_subscription(
-        TypeSubscription(topic_type="Payments", agent_type=agent_type.type)
-    )
-
+    await runtime.add_subscription(TypeSubscription(topic_type="Payments", agent_type=agent_type.type))
 
 async def register_capital_treasury_agent(runtime, model_client: ChatCompletionClient):
     agent_type = await BankingAIAgent.register(

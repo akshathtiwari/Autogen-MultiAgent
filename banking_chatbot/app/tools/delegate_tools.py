@@ -78,3 +78,25 @@ transfer_to_analytics_tool = FunctionTool(
     transfer_to_analytics,
     description="Call this to route the user to AnalyticsAgent."
 )
+
+# app/tools/payment_tools.py
+
+from autogen_core.tools import FunctionTool
+from app.tools.transaction_tools import lookup_transaction, fix_core_banking_status
+
+lookup_transaction_tool = FunctionTool(
+    lookup_transaction,
+    description=(
+        "Look up a transaction by ID in transactions.csv. "
+        "Returns PaymentStatus and CoreBankingStatus. "
+        "Arguments: transaction_id (str) and optional csv_path (str)."
+    ),
+)
+
+fix_core_banking_status_tool = FunctionTool(
+    fix_core_banking_status,
+    description=(
+        "Fixes a mismatch by setting CoreBankingStatus=Success if PaymentStatus=Success. "
+        "Arguments: transaction_id (str) and optional csv_path (str)."
+    ),
+)

@@ -1,7 +1,7 @@
 # app/agents/domain_classifier_agent.py
 
 import json
-from autogen_core import RoutedAgent, message_handler, MessageContext, FunctionCall
+from autogen_core import RoutedAgent, message_handler, MessageContext, FunctionCall, TopicId
 from autogen_core.models import (
     SystemMessage,
     AssistantMessage,
@@ -61,7 +61,7 @@ class DomainClassifierAgent(RoutedAgent):
                 self._system_message,
                 UserMessage(content=classification_prompt, source="System"),
             ],
-            tools=self._delegate_tool_schema,  # can call the delegate tools
+            # tools=self._delegate_tool_schema,  # can call the delegate tools
             cancellation_token=ctx.cancellation_token,
         )
 
@@ -126,7 +126,9 @@ class DomainClassifierAgent(RoutedAgent):
             )
         )
 
+        # Create a new TopicId with the target topic and the same source as in ctx.topic_id
+        new_topic = TopicId(target_topic, source=ctx.topic_id.source)
         await self.publish_message(
             UserTask(context=new_context),
-            topic_id=ctx.topic_id._replace(type=target_topic),  # same session, new topic
+            topic_id=new_topic,  # new topic id with updated type
         )
