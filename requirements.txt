@@ -31,9 +31,11 @@ jupyter_client==8.6.3
 jupyter_core==5.7.2
 matplotlib-inline==0.1.7
 nest-asyncio==1.6.0
+numpy==2.2.4
 openai==1.63.2
 opentelemetry-api==1.30.0
 packaging==24.2
+pandas==2.2.3
 parso==0.8.4
 pillow==11.1.0
 platformdirs==4.3.6
@@ -46,6 +48,7 @@ pydantic_core==2.27.2
 Pygments==2.19.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
+pytz==2025.1
 pywin32==308
 pyzmq==26.2.1
 regex==2024.11.6
@@ -58,6 +61,7 @@ tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
 typing_extensions==4.12.2
+tzdata==2025.1
 urllib3==2.3.0
 wcwidth==0.2.13
 wrapt==1.17.2
