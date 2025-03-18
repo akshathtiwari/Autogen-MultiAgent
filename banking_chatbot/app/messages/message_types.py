@@ -5,14 +5,13 @@ from dataclasses import dataclass
 from pydantic import BaseModel, field_validator
 from autogen_core.models import LLMMessage
 
-#
-# Basic message models for your multi-agent system
-#
-
+# Existing types
 class UserLogin(BaseModel):
-    """Fired when a new user session begins."""
-    pass
-
+    """
+    Fired when a new user session begins.
+    The username is used as the session identifier.
+    """
+    username: str
 
 class UserTask(BaseModel):
     """
@@ -20,7 +19,6 @@ class UserTask(BaseModel):
     between agents in a handoff scenario.
     """
     context: List[LLMMessage]
-
 
 class AgentResponse(BaseModel):
     """
@@ -30,18 +28,16 @@ class AgentResponse(BaseModel):
     reply_to_topic_type: str
     context: List[LLMMessage]
 
+# New type for user credentials
+class UserCredentials(BaseModel):
+    username: str
+    password: str
 
 @dataclass
 class MyMessageType:
-    """Legacy or custom data class for simpler messages."""
     content: str
 
-
 class DomainClassifierOutput(BaseModel):
-    """
-    Used by the classifier to parse JSON: { "agent_name": "..." }
-    Must match one of the known domain agent names.
-    """
     agent_name: str
 
     @field_validator("agent_name")
