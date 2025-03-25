@@ -14,6 +14,8 @@ from autogen_core.models import (
 )
 from autogen_core.tools import Tool
 
+from autogen_core import TopicId
+
 from app.messages.message_types import UserTask, AgentResponse
 
 
@@ -95,6 +97,6 @@ class BankingAIAgent(RoutedAgent):
         message.context.append(AssistantMessage(content=llm_result.content, source=self.id.type))
 
         await self.publish_message(
-            AgentResponse(context=message.context, reply_to_topic_type=self._my_topic_type),
-            topic_id=self._user_topic_type,  
-        )
+    AgentResponse(context=message.context, reply_to_topic_type=self._my_topic_type),
+    topic_id=TopicId(self._user_topic_type, ctx.topic_id.source),
+)

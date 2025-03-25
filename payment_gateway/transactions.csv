@@ -1,6 +1,6 @@
 TransactionID,Timestamp,Amount,PaymentStatus,CoreBankingStatus
-TX1001,2025-03-18 10:00:00,250.00,Success,Success
-TX1002,2025-03-18 10:01:00,100.00,Success,Failed
+TX1001,2025-03-18 10:00:00,250.00,Success,Failed
+TX1002,2025-03-18 10:01:00,100.00,Success,Success
 TX1003,2025-03-18 10:02:00,75.50,Success,Success
 TX1004,2025-03-18 10:03:00,300.00,Success,Success
 TX1005,2025-03-18 10:04:00,500.00,Failed,Failed

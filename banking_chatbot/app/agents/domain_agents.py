@@ -3,6 +3,7 @@
 from autogen_core import TypeSubscription
 from autogen_core.models import SystemMessage, ChatCompletionClient
 from app.agents.base_agent import BankingAIAgent
+from app.agents.payments_agent import PaymentsAgent
 
 
 async def register_retail_banking_agent(runtime, model_client: ChatCompletionClient):
@@ -151,7 +152,7 @@ async def register_it_ops_agent(runtime, model_client: ChatCompletionClient):
         TypeSubscription(topic_type="ITOps", agent_type=agent_type.type)
     )
     
-from app.agents.payments_agent import PaymentsAgent
+
 
 async def register_payments_agent(runtime, model_client: ChatCompletionClient):
     agent_type = await PaymentsAgent.register(
