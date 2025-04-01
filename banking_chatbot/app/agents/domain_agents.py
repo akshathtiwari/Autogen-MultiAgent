@@ -1,5 +1,3 @@
-
-
 from autogen_core import TypeSubscription
 from autogen_core.models import SystemMessage, ChatCompletionClient
 from app.agents.base_agent import BankingAIAgent
@@ -9,7 +7,7 @@ from app.agents.payments_agent import PaymentsAgent
 async def register_retail_banking_agent(runtime, model_client: ChatCompletionClient):
     agent_type = await BankingAIAgent.register(
         runtime,
-        type="RetailBanking",  
+        type="RetailBanking",
         factory=lambda: BankingAIAgent(
             agent_type="RetailBankingAgent",
             system_message=SystemMessage(
@@ -151,10 +149,9 @@ async def register_it_ops_agent(runtime, model_client: ChatCompletionClient):
     await runtime.add_subscription(
         TypeSubscription(topic_type="ITOps", agent_type=agent_type.type)
     )
-    
 
 
-async def register_payments_agent(runtime, model_client: ChatCompletionClient):
+async def register_payments_agent(runtime, model_client: ChatCompletionClient, conversation_state_accessor):
     agent_type = await PaymentsAgent.register(
         runtime,
         type="Payments",
@@ -183,9 +180,11 @@ Remember:
 """
             ),
             model_client=model_client,
+            conversation_state_accessor=conversation_state_accessor
         )
     )
     await runtime.add_subscription(TypeSubscription(topic_type="Payments", agent_type=agent_type.type))
+
 
 async def register_capital_treasury_agent(runtime, model_client: ChatCompletionClient):
     agent_type = await BankingAIAgent.register(

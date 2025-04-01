@@ -27,6 +27,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 session_id = username.strip()
                 runtime_manager.register_websocket(session_id, websocket)
                 conversation_state = "await_password"
+
             elif conversation_state == "await_password":
                 await websocket.send_text("Enter your password:")
                 password = await websocket.receive_text()
@@ -35,19 +36,28 @@ async def websocket_endpoint(websocket: WebSocket):
                     session_id
                 )
                 conversation_state = "await_name"
+
             elif conversation_state == "await_name":
                 await websocket.send_text("May I know your name?")
                 name = await websocket.receive_text()
                 await websocket.send_text(f"Hello, {name}!")
                 await websocket.send_text("Please describe your banking issue or question:")
                 conversation_state = "await_query"
+
             elif conversation_state == "await_query":
                 query = await websocket.receive_text()
                 await runtime_manager.publish_user_message(query, session_id)
                 conversation_state = "in_conversation"
+
             elif conversation_state == "in_conversation":
                 user_msg = await websocket.receive_text()
+                if user_msg.strip().lower() in ["exit", "quit"]:
+                    await websocket.send_text("Chat ended by user request.")
+                    break
                 await runtime_manager.publish_user_message(user_msg, session_id)
+
+                
+
     except WebSocketDisconnect:
         runtime_manager.unregister_websocket(session_id)
 

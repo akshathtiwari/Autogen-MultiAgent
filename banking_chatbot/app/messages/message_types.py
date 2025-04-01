@@ -7,24 +7,15 @@ from autogen_core.models import LLMMessage
 
 
 class UserLogin(BaseModel):
-    """
-    Fired when a new user session begins.
-    The username is used as the session identifier.
-    """
+    
     username: str
 
 class UserTask(BaseModel):
-    """
-    Carries the conversation context (list of LLM messages)
-    between agents in a handoff scenario.
-    """
+    
     context: List[LLMMessage]
 
 class AgentResponse(BaseModel):
-    """
-    The AI agent's final response to the user, plus the topic
-    the user should reply to next.
-    """
+   
     reply_to_topic_type: str
     context: List[LLMMessage]
 

@@ -6,10 +6,7 @@ from autogen_core.models import SystemMessage
 from app.tools.credential_utils import load_credentials_from_csv
 
 class AuthenticationAgent(RoutedAgent):
-    """
-    An agent that validates user credentials loaded from a CSV file.
-    On successful authentication, it publishes a UserLogin message using the username.
-    """
+    
     def __init__(self, credentials_csv_path: str, user_topic: str) -> None:
         super().__init__("AuthenticationAgent")
         self.valid_users = load_credentials_from_csv(credentials_csv_path)

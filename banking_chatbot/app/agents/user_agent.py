@@ -6,10 +6,7 @@ from autogen_core.models import UserMessage
 
 
 class UserAgent(RoutedAgent):
-    """
-    The user-facing agent. Handles user logins, gathers queries,
-    sends them to DomainClassifier, and displays final responses.
-    """
+    
     def __init__(self, description: str, user_topic_type: str, classifier_topic: str):
         super().__init__(description)
         self._user_topic_type = user_topic_type
