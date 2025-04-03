@@ -1,27 +1,57 @@
 from autogen_core import TypeSubscription
 from autogen_core.models import SystemMessage, ChatCompletionClient
+
 from app.agents.base_agent import BankingAIAgent
 from app.agents.payments_agent import PaymentsAgent
 
+from app.tools.transaction_tools import check_balance_tool, make_payment_tool
+from app.agents.retail_sub_agents import CheckBalanceAgent, MakePaymentAgent
+from app.agents.retail_banking_agent import RetailBankingAgent
 
 async def register_retail_banking_agent(runtime, model_client: ChatCompletionClient):
-    agent_type = await BankingAIAgent.register(
+    agent_type = await RetailBankingAgent.register(
         runtime,
         type="RetailBanking",
-        factory=lambda: BankingAIAgent(
+        factory=lambda: RetailBankingAgent(
             agent_type="RetailBankingAgent",
             system_message=SystemMessage(
-                content="You are a Retail Banking expert. Handle queries about personal accounts, loans, etc."
+                content=(
+                    "You are a Retail Banking expert. You can handle queries about personal "
+                    "accounts, loans, or day-to-day banking. You also have two sub-agents:\n"
+                    " - CheckBalanceAgent\n"
+                    " - MakePaymentAgent\n"
+                    "Use 'check_balance_func' to check the user's balance.\n"
+                    "Use 'make_payment_func' to handle a user’s payment.\n"
+                )
             ),
             model_client=model_client,
-            tools=[],
-            delegate_tools=[],
-            my_topic_type="RetailBanking",
-            user_topic_type="User",
         )
     )
+    
     await runtime.add_subscription(
         TypeSubscription(topic_type="RetailBanking", agent_type=agent_type.type)
+    )
+
+
+async def register_check_balance_agent(runtime, model_client):  
+    agent_type = await CheckBalanceAgent.register(
+        runtime,
+        type="CheckBalance",
+        factory=lambda: CheckBalanceAgent(model_client)
+    )
+    await runtime.add_subscription(
+        TypeSubscription(topic_type="CheckBalance", agent_type=agent_type.type)
+    )
+
+
+async def register_make_payment_agent(runtime, model_client):
+    agent_type = await MakePaymentAgent.register(
+        runtime,
+        type="MakePayment",
+        factory=lambda: MakePaymentAgent(model_client)
+    )
+    await runtime.add_subscription(
+        TypeSubscription(topic_type="MakePayment", agent_type=agent_type.type)
     )
 
 

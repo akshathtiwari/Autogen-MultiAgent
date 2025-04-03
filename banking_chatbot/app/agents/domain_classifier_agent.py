@@ -1,5 +1,3 @@
-
-
 import json
 from autogen_core import RoutedAgent, message_handler, MessageContext, FunctionCall, TopicId
 from autogen_core.models import (
@@ -17,8 +15,6 @@ from app.messages.message_types import MyMessageType
 
 
 class DomainClassifierAgent(RoutedAgent):
-    
-
     def __init__(
         self,
         description: str,
@@ -137,13 +133,20 @@ class DomainClassifierAgent(RoutedAgent):
                 user_content += m.content + "\n"
 
         classification_prompt = (
-            "You are an expert banking domain classifier. Your task is to decide which domain is relevant.\n"
-            "Possible agent names: RetailBankingAgent, CorporateBusinessBankingAgent, InvestmentBankingAgent,\n"
-            "WealthManagementAgent, RiskManagementAgent, InsuranceAgent, ITOpsAgent, PaymentsAgent,\n"
-            "CapitalTreasuryAgent, AnalyticsAgent\n\n"
-            f"User query: {user_content}\n\n"
-            "Respond with JSON: {\"agent_name\": \"OneOfTheAbove\"}"
-        )
+    "You are an expert banking domain classifier. Your task is to decide which domain is relevant.\n"
+    "Possible agent names: RetailBankingAgent, CorporateBusinessBankingAgent, InvestmentBankingAgent,\n"
+    "WealthManagementAgent, RiskManagementAgent, InsuranceAgent, ITOpsAgent, PaymentsAgent,\n"
+    "CapitalTreasuryAgent, AnalyticsAgent\n\n"
+    f"User query: {user_content}\n\n"
+    "Respond with JSON: {\"agent_name\": \"OneOfTheAbove\"}\n"
+    "If the user wants to do a normal payment or personal transaction, use RetailBankingAgent, "
+    "not PaymentsAgent. Only route to PaymentsAgent if the user specifically reports a mismatch "
+    "or discrepancy or some failure in the payment process.\n"
+    "Examples:\n"
+    "User: \"How do I pay John 100?\" => Agent: \"RetailBankingAgent\"\n"
+    "User: \"My payment success isn't reflecting in the system\" => Agent: \"PaymentsAgent\""
+)
+
 
         llm_result = await self._model_client.create(
             messages=[

@@ -1,5 +1,3 @@
-
-
 import csv
 import os
 from autogen_core.tools import FunctionTool
@@ -90,3 +88,20 @@ fix_core_banking_status_tool = FunctionTool(
         "Args: transaction_id (str) and optional csv_path (str)."
     ),
 )
+
+LEDGER_CSV_PATH = "C:/Users/akstiwari/OneDrive - Deloitte (O365D)/Desktop/Laptop Files/Desktop Backup/learning/Autogen-MultiAgent/banking_chatbot/app/credentials/ledger.csv"
+def check_balance_func():
+    
+    return "CheckBalanceAgent"
+
+def make_payment_func():
+    return "MakePaymentAgent"
+
+check_balance_tool = FunctionTool(
+    func=check_balance_func,
+    description="Invoke the sub-agent for checking a user’s balance"
+)
+
+make_payment_tool = FunctionTool(
+    func=make_payment_func,
+    description="Invoke the sub-agent for making a payment")

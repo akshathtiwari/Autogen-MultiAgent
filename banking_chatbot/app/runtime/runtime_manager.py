@@ -1,5 +1,3 @@
-
-
 import asyncio
 from typing import Dict, List, Any
 from collections import defaultdict
@@ -17,8 +15,11 @@ from app.messages.message_types import (
 )
 
 from app.agents.authentication_agent import AuthenticationAgent
+from app.agents.domain_classifier_agent import DomainClassifierAgent
 from app.agents.domain_agents import (
     register_retail_banking_agent,
+    register_make_payment_agent,
+    register_check_balance_agent,
     register_payments_agent,
     register_corporate_banking_agent,
     register_investment_banking_agent,
@@ -29,7 +30,6 @@ from app.agents.domain_agents import (
     register_capital_treasury_agent,
     register_analytics_agent
 )
-
 from app.tools.delegate_tools import (
     transfer_to_retail_banking_tool,
     transfer_to_corporate_banking_tool,
@@ -42,6 +42,7 @@ from app.tools.delegate_tools import (
     transfer_to_capital_treasury_tool,
     transfer_to_analytics_tool
 )
+
 
 class ConversationStateAccessor:
     def __init__(self, state_dict, msg_context_dict):
@@ -64,7 +65,6 @@ class ConversationStateAccessor:
         self._state_dict[session_id]["last_agent"] = agent
 
     def reset_messages(self, session_id: str):
-        """Clear the old conversation messages."""
         self._msg_context_dict[session_id] = []
 
 
@@ -84,22 +84,17 @@ class RuntimeManager:
         self._runtime = HookedAgentRuntime(self._on_agent_response)
         self._model_client = OpenAIChatCompletionClient(model="gpt-4o-mini", api_key=None)
 
-        self._response_queues = defaultdict(list)
-        self._websockets = {}
-        self._conversation_context = defaultdict(list)
-        self._conversation_state = defaultdict(dict)
+        self._response_queues: Dict[str, List[AgentResponse]] = defaultdict(list)
+        self._websockets: Dict[str, WebSocket] = {}
+        self._conversation_context: Dict[str, List] = defaultdict(list)
+        self._conversation_state: Dict[str, Dict[str, Any]] = defaultdict(dict)
 
-        
         self.conversation_accessor = ConversationStateAccessor(
             self._conversation_state,
-            self._conversation_context  
+            self._conversation_context
         )
 
     async def start_runtime(self):
-        
-        from app.agents.domain_classifier_agent import DomainClassifierAgent
-
-        
         delegate_tools = [
             transfer_to_retail_banking_tool,
             transfer_to_corporate_banking_tool,
@@ -113,7 +108,7 @@ class RuntimeManager:
             transfer_to_analytics_tool
         ]
 
-        
+        # Register DomainClassifierAgent
         classifier_type = await DomainClassifierAgent.register(
             self._runtime,
             type="DomainClassifier",
@@ -124,25 +119,30 @@ class RuntimeManager:
                 delegate_tools=delegate_tools,
                 my_topic_type="DomainClassifier",
                 user_topic_type="User",
-                conversation_state_accessor=self.conversation_accessor,  
+                conversation_state_accessor=self.conversation_accessor,
             )
         )
         await self._runtime.add_subscription(
             TypeSubscription(topic_type="DomainClassifier", agent_type=classifier_type.type)
         )
 
-        
-        credentials_csv = "C:/Users/akstiwari/OneDrive - Deloitte (O365D)/Desktop/Laptop Files/Desktop Backup/learning/Autogen-MultiAgent/banking_chatbot/app/credentials/users.csv"
+        credentials_csv = (
+            "C:/Users/akstiwari/OneDrive - Deloitte (O365D)/Desktop/Laptop Files/Desktop Backup/"
+            "learning/Autogen-MultiAgent/banking_chatbot/app/credentials/users.csv"
+        )
         auth_type = await AuthenticationAgent.register(
             self._runtime,
             type="Auth",
             factory=lambda: AuthenticationAgent(credentials_csv_path=credentials_csv, user_topic="User")
         )
-        await self._runtime.add_subscription(TypeSubscription(topic_type="Auth", agent_type=auth_type.type))
+        await self._runtime.add_subscription(
+            TypeSubscription(topic_type="Auth", agent_type=auth_type.type)
+        )
 
-        
         await register_retail_banking_agent(self._runtime, self._model_client)
-        await register_payments_agent(self._runtime, self._model_client,self.conversation_accessor)
+        await register_check_balance_agent(self._runtime, self._model_client)
+        await register_make_payment_agent(self._runtime, self._model_client)
+        await register_payments_agent(self._runtime, self._model_client, self.conversation_accessor)
         await register_corporate_banking_agent(self._runtime, self._model_client)
         await register_investment_banking_agent(self._runtime, self._model_client)
         await register_wealth_management_agent(self._runtime, self._model_client)
@@ -158,7 +158,10 @@ class RuntimeManager:
         await self._runtime.stop_when_idle()
 
     async def publish_credentials(self, creds: UserCredentials, session_id: str):
-        await self._runtime.publish_message(creds, topic_id=TopicId("Auth", source=session_id))
+        await self._runtime.publish_message(
+            creds,
+            topic_id=TopicId("Auth", source=session_id)
+        )
 
     async def publish_user_message(self, user_text: str, session_id: str):
         from autogen_core.models import UserMessage
@@ -211,7 +214,15 @@ class RuntimeManager:
     def reset_state(self, session_id: str):
         self._conversation_state[session_id] = {}
 
-    def _on_agent_response(self, response: AgentResponse, topic_id: TopicId):
+    def _on_agent_response(self, response: AgentResponse, topic_id):
+       
+        if not hasattr(topic_id, "source"):
+            session_id = ""
+            for msg in response.context:
+                if hasattr(msg, "source") and msg.source:
+                    session_id = msg.source
+                    break
+            topic_id = TopicId(topic_id, session_id)
         session_id = topic_id.source
         if session_id in self._websockets:
             ws = self._websockets[session_id]
